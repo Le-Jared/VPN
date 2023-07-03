@@ -8,17 +8,6 @@ A simple Virtual Private Network (VPN) built in Java that showcases the basics o
 - All messages are encrypted using the AES (Advanced Encryption Standard) algorithm with a secret key.
 - The VPN handles messages of varying sizes by dynamically managing buffer sizes.
 
-### Usage 
-First, start the server:
-'''java Server'''
-
-The server will start listening for connections on port 6666.
-
-Next, start the client:
-
-'''java Client'''
-
-The client will connect to the server and send an encrypted message.
 ### Limitations
 While this VPN demonstrates the basics of encrypted communication over a network, it is not secure against many types of attacks and should not be used in a real-world application. For a secure VPN, use a well-tested library or software package.
 
