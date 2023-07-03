@@ -1,5 +1,5 @@
 # Java VPN Project
-Welcome to the Java VPN Project. This is a simple Virtual Private Network (VPN) built in Java that showcases the basics of networking and encryption. While the project is just a demonstration of principles and not suitable for use in a real-world secure communication system, it provides a solid foundation for learning about these topics.
+A simple Virtual Private Network (VPN) built in Java that showcases the basics of networking and encryption. While the project is just a demonstration of principles and not suitable for use in a real-world secure communication system, it provides a solid foundation for learning about these topics.
 
 ### Features
 - The VPN uses the AsynchronousSocketChannel class in Java's NIO (Non-blocking I/O) package to handle network communication.
