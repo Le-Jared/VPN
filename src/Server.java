@@ -50,23 +50,14 @@ public class Server {
 
     private static void startHandshake(AsynchronousSocketChannel clientChannel) {
         ByteBuffer buffer = ByteBuffer.allocate(1024);
-        clientChannel.read(buffer, buffer, new CompletionHandler<Integer, ByteBuffer>() {
+        clientChannel.read(buffer, buffer, createReadCompletionHandler(clientChannel, buffer));
+    }
+
+    private static CompletionHandler<Integer, ByteBuffer> createReadCompletionHandler(AsynchronousSocketChannel clientChannel, ByteBuffer buffer) {
+        return new CompletionHandler<Integer, ByteBuffer>() {
             @Override
             public void completed(Integer result, ByteBuffer buffer) {
-                buffer.flip();
-                String secretKey = new String(buffer.array(), 0, result).trim();
-                buffer.clear();
-                if (HANDSHAKE_SECRET.equals(secretKey)) {
-                    System.out.println("Handshake successful. Secret Key: " + secretKey);
-                    handleConnection(clientChannel, secretKey);
-                } else {
-                    System.out.println("Handshake failed. Closing connection.");
-                    try {
-                        clientChannel.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
+                handleHandshakeResult(clientChannel, buffer, result);
             }
 
             @Override
@@ -74,36 +65,58 @@ public class Server {
                 System.out.println("Failed to read a message");
                 exc.printStackTrace();
             }
-        });
+        };
+    }
+
+    private static void handleHandshakeResult(AsynchronousSocketChannel clientChannel, ByteBuffer buffer, Integer result) {
+        buffer.flip();
+        String secretKey = new String(buffer.array(), 0, result).trim();
+        buffer.clear();
+        if (HANDSHAKE_SECRET.equals(secretKey)) {
+            System.out.println("Handshake successful. Secret Key: " + secretKey);
+            handleConnection(clientChannel, secretKey);
+        } else {
+            closeConnection(clientChannel);
+        }
+    }
+
+    private static void closeConnection(AsynchronousSocketChannel clientChannel) {
+        System.out.println("Handshake failed. Closing connection.");
+        try {
+            clientChannel.close();
+        } catch (IOException e) {
+            System.err.println("Failed to close connection.");
+            e.printStackTrace();
+        }
     }
 
     private static void handleConnection(AsynchronousSocketChannel clientChannel, String secretKey) {
-        ByteBuffer buffer = ByteBuffer.allocate(1024);
-        clientChannel.read(buffer, buffer, new CompletionHandler<Integer, ByteBuffer>() {
-            @Override
-            public void completed(Integer result, ByteBuffer buffer) {
-                try {
-                    if (result == -1) {
-                        System.out.println("Client disconnected");
-                        clientChannel.close();
-                    } else {
-                        buffer.flip();
-                        String decryptedMessage = decryptMessage(buffer.array(), 0, result, secretKey);
-                        System.out.println("Decrypted message= " + decryptedMessage);
-                        buffer.clear();
-                        clientChannel.read(buffer, buffer, this);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
+    ByteBuffer buffer = ByteBuffer.allocate(1024);
+    clientChannel.read(buffer, buffer, new CompletionHandler<Integer, ByteBuffer>() {
+        @Override
+        public void completed(Integer result, ByteBuffer buffer) {
+            try {
+                if (result == -1) {
+                    System.out.println("Client disconnected");
+                    clientChannel.close();
+                } else {
+                    buffer.flip();
+                    String decryptedMessage = decryptMessage(buffer.array(), 0, result, secretKey);
+                    System.out.println("Decrypted message= " + decryptedMessage);
+                    buffer.clear();
+                    clientChannel.read(buffer, buffer, this);
                 }
-            }
-
-            @Override
-            public void failed(Throwable e, ByteBuffer buffer) {
-                System.out.println("Failed to read a message");
+            } catch (Exception e) {
                 e.printStackTrace();
             }
-        });
+        }
+
+        @Override
+        public void failed(Throwable e, ByteBuffer buffer) {
+            System.out.println("Failed to read a message");
+            e.printStackTrace();
+        }
+    });
     }
 
     private static String decryptMessage(byte[] encryptedMsg, int offset, int length, String secretKey) throws Exception {

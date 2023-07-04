@@ -32,7 +32,11 @@ public class Client {
 
     private static void startHandshake(AsynchronousSocketChannel clientChannel) {
         ByteBuffer buffer = ByteBuffer.wrap(HANDSHAKE_SECRET.getBytes());
-        clientChannel.write(buffer, buffer, new CompletionHandler<Integer, ByteBuffer>() {
+        clientChannel.write(buffer, buffer, createWriteCompletionHandler(clientChannel, buffer));
+    }
+
+    private static CompletionHandler<Integer, ByteBuffer> createWriteCompletionHandler(AsynchronousSocketChannel clientChannel, ByteBuffer buffer) {
+        return new CompletionHandler<Integer, ByteBuffer>() {
             @Override
             public void completed(Integer result, ByteBuffer buffer) {
                 handleServerResponse(clientChannel, HANDSHAKE_SECRET);
@@ -43,7 +47,7 @@ public class Client {
                 System.out.println("Failed to send handshake");
                 exc.printStackTrace();
             }
-        });
+        };
     }
 
     private static void handleServerResponse(AsynchronousSocketChannel clientChannel, String secretKey) {
